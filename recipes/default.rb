@@ -17,17 +17,28 @@
 # limitations under the License.
 #
 
+include_recipe 'sysctl::default'
+
 package "keepalived"
 
-if node['keepalived']['shared_address']
-  file '/etc/sysctl.d/60-ip-nonlocal-bind.conf' do
-    mode 0644
-    content "net.ipv4.ip_nonlocal_bind=1\n"
-  end
+case node['platform']
+  when 'ubuntu'
 
-  service 'procps' do
-    action :start
-  end
+    if node['keepalived']['shared_address']
+      file '/etc/sysctl.d/60-ip-nonlocal-bind.conf' do
+        mode 0644
+        content "net.ipv4.ip_nonlocal_bind=1\n"
+      end
+
+      service 'procps' do
+        action :start
+      end
+    end
+
+  else
+    sysctl_param 'net.ipv4.ip_nonlocal_bind' do
+      value 1
+    end
 end
 
 template "keepalived.conf" do
